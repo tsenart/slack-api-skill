@@ -45,15 +45,54 @@ Protect it:
 chmod 600 ~/.slack.conf
 ```
 
-### Getting tokens
+### Creating a Slack App
 
 1. Go to [api.slack.com/apps](https://api.slack.com/apps)
-2. Create or select an app
-3. Navigate to **OAuth & Permissions**
-4. Add required scopes (see below)
-5. Install to workspace and copy the token
+2. Click **Create New App** → **From scratch**
+3. Name your app (e.g., "AI Agent") and select your workspace
+4. Click **Create App**
 
-### Token types
+### Adding Scopes
+
+1. In your app settings, go to **OAuth & Permissions**
+2. Scroll to **Scopes** → **Bot Token Scopes**
+3. Add scopes based on what you need:
+
+| Operation | Required Scopes |
+|-----------|-----------------|
+| Send messages | `chat:write`, `chat:write.public` |
+| Read channels | `channels:read`, `groups:read` |
+| Read history | `channels:history`, `groups:history` |
+| Read users | `users:read`, `users:read.email` |
+| Join channels | `channels:join` |
+| Reactions | `reactions:write`, `reactions:read` |
+| Pins | `pins:write`, `pins:read` |
+| Files | `files:write`, `files:read` |
+| DMs | `im:write`, `mpim:write` |
+| User groups | `usergroups:read` |
+| DND | `dnd:read`, `dnd:write` |
+| Bookmarks | `bookmarks:write`, `bookmarks:read` |
+
+For user-level operations (status, search), add **User Token Scopes** instead:
+- `users.profile:write` — Set status
+- `search:read` — Search messages
+
+### Installing and Getting the Token
+
+1. Scroll up to **OAuth Tokens** and click **Install to Workspace**
+2. Review permissions and click **Allow**
+3. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
+4. For user tokens, copy the **User OAuth Token** (starts with `xoxp-`)
+5. Add to `~/.slack.conf` under the appropriate environment section
+
+### Reinstalling After Scope Changes
+
+When you add new scopes, you must reinstall the app:
+1. Go to **OAuth & Permissions**
+2. Click **Reinstall to Workspace**
+3. Approve the new permissions
+
+### Token Types
 
 | Prefix | Type | Use for |
 |--------|------|---------|
