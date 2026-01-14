@@ -18,15 +18,15 @@ Direct Slack API access with multi-environment support.
 - Include tokens in error messages or debug output
 - Store tokens in files other than `~/.slack.conf`
 
-## First Step: Check Available Environments
+## MANDATORY First Step: Discover Environments
 
-Before making any Slack API calls, list available environments:
+**⚠️ ALWAYS run this BEFORE any Slack API call. NEVER assume environment names like "work" or "personal" exist.**
 
 ```bash
 scripts/slack-envs
 ```
 
-This shows which environments (e.g., `work`, `personal`) are configured without exposing tokens.
+This lists the actual configured environment names. Use ONLY the names returned by this command. Environment names are user-defined and vary per configuration—do not guess or assume.
 
 ## Setup
 
