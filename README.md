@@ -1,35 +1,31 @@
 # slack-api-skill
 
-An [Agent Skill](https://agentskills.io) for interacting with the Slack Web API. Provides token-efficient, multi-environment Slack integration for AI agents.
+Slack Web API skill for AI coding agents. Provides token-efficient, multi-environment Slack integration.
+
+## Installation
+
+### Amp
+
+```bash
+amp skill add --global tsenart/slack-api-skill --name using-slack-api --overwrite
+```
+
+### Claude Code
+
+```bash
+git clone https://github.com/tsenart/slack-api-skill.git ~/.claude/skills/using-slack-api
+```
+
+### Manual
+
+Clone or copy to your skills directory and reference in your agent config.
 
 ## Features
 
 - **Multi-environment**: Configure multiple Slack workspaces (work, personal, etc.)
 - **Token-efficient output**: Compact `key=value` format designed for LLM context windows
-- **Full API coverage**: Messages, channels, users, reactions, DND, files, and more
+- **Full API coverage**: Messages, channels, users, reactions, DND, files, pins, scheduled messages, and more
 - **Progressive disclosure**: Core docs in SKILL.md, detailed references loaded on demand
-
-## Installation
-
-### For Agent Skills-compatible tools
-
-Copy to your skills directory:
-
-```bash
-# Global installation
-cp -r . ~/.config/agents/skills/using-slack-api
-
-# Or project-specific
-cp -r . .agents/skills/using-slack-api
-```
-
-### Standalone usage
-
-The `scripts/slack` wrapper works independently:
-
-```bash
-./scripts/slack <env> <method> [params...]
-```
 
 ## Configuration
 
