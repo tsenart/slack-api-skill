@@ -102,17 +102,22 @@ When you add new scopes, you must reinstall the app:
 ## Usage
 
 ```bash
+SKILL=.agents/skills/using-slack-api
+
+# List configured environments (safe, no secrets)
+$SKILL/scripts/slack-envs
+
 # Verify token
-scripts/slack work auth.test
+$SKILL/scripts/slack work auth.test
 
 # List channels
-scripts/slack work conversations.list types=public_channel
+$SKILL/scripts/slack work conversations.list types=public_channel
 
 # Send message
-scripts/slack work chat.postMessage channel=C1234567 text="Hello!"
+$SKILL/scripts/slack work chat.postMessage channel=C1234567 text="Hello!"
 
 # Set status (user token)
-scripts/slack personal users.profile.set profile='{"status_text":"Away","status_emoji":":palm_tree:"}'
+$SKILL/scripts/slack personal users.profile.set profile='{"status_text":"Away","status_emoji":":palm_tree:"}'
 ```
 
 ### Output format
@@ -149,14 +154,19 @@ C01234569 team-backend [priv]
 
 ```
 slack-api-skill/
-├── SKILL.md              # Agent skill definition
+├── .agents/skills/using-slack-api/
+│   ├── SKILL.md          # Agent skill definition
+│   ├── scripts/
+│   │   ├── slack         # Main CLI wrapper
+│   │   ├── slack-fmt     # Output formatter
+│   │   └── slack-envs    # List environments (safe)
+│   └── references/
+│       ├── api-methods.md    # Complete API reference
+│       └── blocks.md         # Block Kit formatting guide
+├── .claude-plugin/
+│   └── plugin.json       # Claude Code plugin metadata
 ├── README.md             # This file
-├── scripts/
-│   ├── slack             # Main CLI wrapper
-│   └── slack-fmt         # Output formatter
-└── references/
-    ├── api-methods.md    # Complete API reference
-    └── blocks.md         # Block Kit formatting guide
+└── LICENSE
 ```
 
 ## Requirements
