@@ -7,6 +7,27 @@ description: Interacts with Slack workspaces via the Web API. Sends messages, li
 
 Direct Slack API access with multi-environment support.
 
+## Security Rules
+
+**NEVER read, cat, or open `~/.slack.conf`** — it contains secrets. Instead use:
+- `scripts/slack-envs` — List configured environments (safe, no secrets)
+- `scripts/slack` — Make API calls (reads config internally)
+
+**NEVER expose tokens.** Do not:
+- Print, log, or display tokens
+- Include tokens in error messages or debug output
+- Store tokens in files other than `~/.slack.conf`
+
+## First Step: Check Available Environments
+
+Before making any Slack API calls, list available environments:
+
+```bash
+scripts/slack-envs
+```
+
+This shows which environments (e.g., `work`, `personal`) are configured without exposing tokens.
+
 ## Setup
 
 Create `~/.slack.conf`:

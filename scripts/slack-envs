@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# List configured Slack environments WITHOUT exposing secrets.
+# Usage: slack-envs
+
+set -euo pipefail
+
+CONFIG_FILE="${SLACK_CONFIG:-$HOME/.slack.conf}"
+
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "No Slack config found at $CONFIG_FILE"
+  exit 1
+fi
+
+echo "Configured environments:"
+grep -E '^\[' "$CONFIG_FILE" | tr -d '[]' | sed 's/^/  - /'
