@@ -64,6 +64,12 @@ def fmt_file:
 def fmt_reminder:
   "\(.id) \(.text | fmt) \(.time | fmt)";
 
+def fmt_usergroup:
+  "\(.id) @\(.handle) \(.name)\(if .user_count then " [\(.user_count) users]" else "" end)";
+
+def fmt_search_match:
+  "\(.ts) \(.channel.name // .channel.id) \(.username // "-") \(.text | fmt)";
+
 def fmt_generic:
   to_entries | map(select(.value != null and .value != "" and .value != false)) |
   map("\(.key)=\(.value | fmt)") | join(" ");
@@ -87,6 +93,12 @@ elif .files then
 elif .reminders then
   "# \(.reminders | length) reminders",
   (.reminders[] | fmt_reminder)
+elif .usergroups then
+  "# \(.usergroups | length) usergroups",
+  (.usergroups[] | fmt_usergroup)
+elif .messages and .query then
+  "# \(.messages.total) matches\(if .messages.paging.pages > 1 then " (page \(.messages.paging.page)/\(.messages.paging.pages))" else "" end)",
+  (.messages.matches[] | fmt_search_match)
 elif .channel and (.channel | type) == "object" then
   "# channel",
   (.channel | fmt_channel),
@@ -102,6 +114,9 @@ elif .user and (.user | type) == "object" then
 elif .message then
   "# message posted",
   "ts=\(.ts) channel=\(.channel)"
+elif .scheduled_message_id then
+  "# scheduled",
+  "id=\(.scheduled_message_id) ts=\(.post_at | fmt) channel=\(.channel)"
 elif .ts and .channel then
   "# ok",
   "ts=\(.ts) channel=\(.channel)"

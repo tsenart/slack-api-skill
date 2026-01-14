@@ -105,7 +105,7 @@ for arg in "$@"; do
 done
 
 # Determine if GET or POST
-POST_METHODS="chat.postMessage chat.update chat.delete chat.postEphemeral chat.scheduleMessage \
+POST_METHODS="chat.postMessage chat.update chat.delete chat.postEphemeral chat.scheduleMessage chat.deleteScheduledMessage \
   conversations.create conversations.archive conversations.unarchive conversations.rename \
   conversations.invite conversations.kick conversations.join conversations.leave \
   conversations.open conversations.close conversations.mark conversations.setPurpose conversations.setTopic \
@@ -113,7 +113,7 @@ POST_METHODS="chat.postMessage chat.update chat.delete chat.postEphemeral chat.s
   dnd.setSnooze dnd.endSnooze dnd.endDnd \
   reactions.add reactions.remove \
   pins.add pins.remove \
-  files.getUploadURLExternal files.completeUploadExternal files.delete \
+  files.completeUploadExternal files.delete \
   bookmarks.add bookmarks.edit bookmarks.remove \
   stars.add stars.remove"
 
@@ -154,7 +154,7 @@ if [[ "$IS_POST" == true ]]; then
   
   RESPONSE=$(curl -s -X POST "$URL" \
     -H "Authorization: Bearer $SLACK_TOKEN" \
-    -H "Content-Type: application/json" \
+    -H "Content-Type: application/json; charset=utf-8" \
     -d "$BODY")
 else
   # GET with query params

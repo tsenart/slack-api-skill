@@ -88,6 +88,44 @@ scripts/slack work reactions.add channel=C1234 timestamp=MSG_TS name=thumbsup
 scripts/slack work reactions.remove channel=C1234 timestamp=MSG_TS name=thumbsup
 ```
 
+### Pins
+```bash
+scripts/slack work pins.add channel=C1234 timestamp=MSG_TS
+scripts/slack work pins.remove channel=C1234 timestamp=MSG_TS
+scripts/slack work pins.list channel=C1234
+```
+
+### Scheduled Messages
+```bash
+scripts/slack work chat.scheduleMessage channel=C1234 text="Hello" post_at=UNIX_TS
+scripts/slack work chat.scheduledMessages.list channel=C1234
+scripts/slack work chat.deleteScheduledMessage channel=C1234 scheduled_message_id=Q1234
+```
+
+### Direct Messages
+```bash
+scripts/slack work conversations.open users=U1234            # Open DM, get channel ID
+scripts/slack work conversations.open users=U1234,U5678      # Group DM
+scripts/slack work chat.postMessage channel=D1234 text="Hi"  # Send to DM channel
+```
+
+### User Groups
+```bash
+scripts/slack work usergroups.list                           # List @-mention groups
+```
+
+### File Upload (3-step)
+```bash
+# 1. Get upload URL
+scripts/slack work files.getUploadURLExternal filename=doc.txt length=1024
+
+# 2. Upload content (use curl)
+curl -s -X POST "$UPLOAD_URL" -F "file=@local-file.txt"
+
+# 3. Complete upload and share
+scripts/slack work files.completeUploadExternal 'files=[{"id":"F1234","title":"My Doc"}]' channel_id=C1234
+```
+
 ### Search (user token only)
 ```bash
 scripts/slack personal search.messages query="keyword" count=20
@@ -126,6 +164,11 @@ ts=1234567890.123456 channel=C01234567
 | Status | `users.profile:write` (user token) |
 | Reactions | `reactions:write` |
 | DND | `dnd:write` |
+| Pins | `pins:write`, `pins:read` |
+| Files | `files:write`, `files:read` |
+| DMs | `im:write`, `mpim:write` |
+| User Groups | `usergroups:read` |
+| Bookmarks | `bookmarks:write` |
 | Search | `search:read` (user token) |
 
 ## References
