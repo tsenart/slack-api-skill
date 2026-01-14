@@ -1,0 +1,134 @@
+---
+name: using-slack-api
+description: Interacts with Slack workspaces via the Web API. Sends messages, lists channels/users, uploads files, sets status, manages DND. Use when asked to post to Slack, query Slack data, or automate Slack operations.
+---
+
+# Using Slack API
+
+Direct Slack API access with multi-environment support.
+
+## Setup
+
+Create `~/.slack.conf`:
+```ini
+[work]
+token = xoxb-your-bot-token
+
+[personal]
+token = xoxp-your-user-token
+```
+
+Protect it: `chmod 600 ~/.slack.conf`
+
+Get tokens: https://api.slack.com/apps → OAuth & Permissions
+
+## Quick Start
+
+```bash
+scripts/slack work auth.test                               # Verify token
+scripts/slack work conversations.list types=public_channel # List channels
+scripts/slack work users.list                              # List users
+scripts/slack work chat.postMessage channel=C1234 text="Hello"
+```
+
+## The `slack` Script
+
+```bash
+scripts/slack <env> <method> [key=value...] [--raw|--full]
+```
+
+- `<env>` — Environment name from config (e.g., `work`, `personal`)
+- `--raw` — Original JSON output
+- `--full` — No string truncation
+
+Output is compact `key=value` format, one line per item.
+
+## Common Operations
+
+### Channels
+```bash
+scripts/slack work conversations.list types=public_channel,private_channel
+scripts/slack work conversations.list types=im              # DMs
+scripts/slack work conversations.info channel=C1234
+scripts/slack work conversations.history channel=C1234 limit=20
+scripts/slack work conversations.create name=new-channel is_private=false
+```
+
+### Messages
+```bash
+scripts/slack work chat.postMessage channel=C1234 text="Hello"
+scripts/slack work chat.postMessage channel=C1234 text="Reply" thread_ts=1234567890.123
+scripts/slack work chat.update channel=C1234 ts=MSG_TS text="Updated"
+scripts/slack work chat.delete channel=C1234 ts=MSG_TS
+```
+
+### Users
+```bash
+scripts/slack work users.list
+scripts/slack work users.info user=U1234
+scripts/slack work users.lookupByEmail email=user@example.com
+```
+
+### Status (requires user token xoxp-)
+```bash
+scripts/slack personal users.profile.set profile='{"status_text":"In meeting","status_emoji":":calendar:"}'
+scripts/slack personal users.profile.set profile='{"status_text":"","status_emoji":""}'  # Clear
+```
+
+### DND / Snooze
+```bash
+scripts/slack work dnd.setSnooze num_minutes=60
+scripts/slack work dnd.endSnooze
+scripts/slack work dnd.info
+```
+
+### Reactions
+```bash
+scripts/slack work reactions.add channel=C1234 timestamp=MSG_TS name=thumbsup
+scripts/slack work reactions.remove channel=C1234 timestamp=MSG_TS name=thumbsup
+```
+
+### Search (user token only)
+```bash
+scripts/slack personal search.messages query="keyword" count=20
+```
+
+## Output Format
+
+Compact, one line per item:
+```
+# 15 channels (more avail)
+C01234567 general
+C01234568 random
+C01234569 team-backend [priv]
+```
+
+```
+# message posted
+ts=1234567890.123456 channel=C01234567
+```
+
+## Token Types
+
+| Prefix | Type | Use for |
+|--------|------|---------|
+| `xoxb-` | Bot | Messages, reactions, most operations |
+| `xoxp-` | User | Status, profile, search, user-scoped ops |
+
+## Required Scopes
+
+| Operation | Scopes |
+|-----------|--------|
+| Messages | `chat:write` (+`chat:write.public` for any channel) |
+| Channels | `channels:read`, `groups:read` |
+| History | `channels:history`, `groups:history` |
+| Users | `users:read`, `users:read.email` |
+| Status | `users.profile:write` (user token) |
+| Reactions | `reactions:write` |
+| DND | `dnd:write` |
+| Search | `search:read` (user token) |
+
+## References
+
+- `references/api-methods.md` — Full method reference
+- `references/blocks.md` — Block Kit formatting

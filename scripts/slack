@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# Slack API wrapper - multi-env, token-efficient output
+# Usage: slack <env> <method> [params...] [--raw|--full]
+#
+# Examples:
+#   slack work conversations.list types=public_channel
+#   slack personal chat.postMessage channel=C1234 text="Hello"
+#   slack work users.list
+#
+# Config: ~/.slack.conf (or $SLACK_CONFIG)
+#   [work]
+#   token = xoxb-...
+#   
+#   [personal]
+#   token = xoxp-...
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SLACK_CONFIG:-$HOME/.slack.conf}"
+
+ENV="${1:-}"
+METHOD="${2:-}"
+shift 2 2>/dev/null || true
+
+show_usage() {
+  echo "Usage: slack <env> <method> [params...] [--raw|--full]" >&2
+  echo "" >&2
+  echo "Examples:" >&2
+  echo "  slack work conversations.list types=public_channel" >&2
+  echo "  slack work chat.postMessage channel=C1234 text=\"Hello\"" >&2
+  echo "  slack work users.list" >&2
+  echo "" >&2
+  if [[ -f "$CONFIG_FILE" ]]; then
+    echo "Available environments:" >&2
+    grep -E '^\[' "$CONFIG_FILE" | tr -d '[]' | sed 's/^/  /' >&2
+  else
+    echo "Config file not found: $CONFIG_FILE" >&2
+    echo "" >&2
+    echo "Create it with:" >&2
+    echo "  [work]" >&2
+    echo "  token = xoxb-your-bot-token" >&2
+    echo "" >&2
+    echo "  [personal]" >&2
+    echo "  token = xoxp-your-user-token" >&2
+  fi
+  exit 1
+}
+
+if [[ -z "$ENV" || -z "$METHOD" ]]; then
+  show_usage
+fi
+
+# Parse config file for token
+get_token() {
+  local env="$1"
+  local in_section=false
+  
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "error: config file not found: $CONFIG_FILE" >&2
+    return 1
+  fi
+  
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip comments and empty lines
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// }" ]] && continue
+    
+    # Check for section header
+    if [[ "$line" =~ ^\[([^]]+)\] ]]; then
+      if [[ "${BASH_REMATCH[1]}" == "$env" ]]; then
+        in_section=true
+      else
+        in_section=false
+      fi
+      continue
+    fi
+    
+    # Parse key = value in current section
+    if [[ "$in_section" == true && "$line" =~ ^[[:space:]]*token[[:space:]]*=[[:space:]]*(.+) ]]; then
+      echo "${BASH_REMATCH[1]}" | tr -d '"'"'" | xargs
+      return 0
+    fi
+  done < "$CONFIG_FILE"
+  
+  echo "error: environment '$env' not found in $CONFIG_FILE" >&2
+  return 1
+}
+
+SLACK_TOKEN=$(get_token "$ENV") || exit 1
+
+# Parse remaining args
+RAW=""
+FULL=""
+PARAMS=()
+JSON_BODY=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --raw) RAW="--raw" ;;
+    --full) FULL="--full" ;;
+    {*) JSON_BODY="$arg" ;;
+    *=*) PARAMS+=("$arg") ;;
+  esac
+done
+
+# Determine if GET or POST
+POST_METHODS="chat.postMessage chat.update chat.delete chat.postEphemeral chat.scheduleMessage \
+  conversations.create conversations.archive conversations.unarchive conversations.rename \
+  conversations.invite conversations.kick conversations.join conversations.leave \
+  conversations.open conversations.close conversations.mark conversations.setPurpose conversations.setTopic \
+  users.profile.set users.setPresence users.setPhoto users.deletePhoto \
+  dnd.setSnooze dnd.endSnooze dnd.endDnd \
+  reactions.add reactions.remove \
+  pins.add pins.remove \
+  files.getUploadURLExternal files.completeUploadExternal files.delete \
+  bookmarks.add bookmarks.edit bookmarks.remove \
+  stars.add stars.remove"
+
+IS_POST=false
+for pm in $POST_METHODS; do
+  if [[ "$METHOD" == "$pm" ]]; then
+    IS_POST=true
+    break
+  fi
+done
+
+URL="https://slack.com/api/$METHOD"
+
+if [[ "$IS_POST" == true ]]; then
+  # Build JSON body from params or use provided JSON
+  if [[ -n "$JSON_BODY" ]]; then
+    BODY="$JSON_BODY"
+  else
+    BODY="{"
+    first=true
+    for param in "${PARAMS[@]}"; do
+      key="${param%%=*}"
+      val="${param#*=}"
+      if [[ "$first" == true ]]; then
+        first=false
+      else
+        BODY+=","
+      fi
+      # Try to detect if value is JSON
+      if [[ "$val" =~ ^\{.*\}$ ]] || [[ "$val" =~ ^\[.*\]$ ]] || [[ "$val" =~ ^[0-9]+$ ]] || [[ "$val" == "true" ]] || [[ "$val" == "false" ]]; then
+        BODY+="\"$key\":$val"
+      else
+        BODY+="\"$key\":\"$val\""
+      fi
+    done
+    BODY+="}"
+  fi
+  
+  RESPONSE=$(curl -s -X POST "$URL" \
+    -H "Authorization: Bearer $SLACK_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$BODY")
+else
+  # GET with query params
+  if [[ ${#PARAMS[@]} -gt 0 ]]; then
+    QUERY=$(printf "&%s" "${PARAMS[@]}")
+    URL="$URL?${QUERY:1}"
+  fi
+  
+  RESPONSE=$(curl -s "$URL" \
+    -H "Authorization: Bearer $SLACK_TOKEN")
+fi
+
+# Format output
+echo "$RESPONSE" | "$SCRIPT_DIR/slack-fmt" $RAW $FULL
