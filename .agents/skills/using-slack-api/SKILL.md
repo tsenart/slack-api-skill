@@ -59,10 +59,20 @@ scripts/slack <env> <method> [key=value...] [--raw|--full]
 ```
 
 - `<env>` — Environment name from config (e.g., `work`, `personal`)
+- `key=-` — Read value from stdin (for multiline text)
 - `--raw` — Original JSON output
 - `--full` — No string truncation
 
 Output is compact `key=value` format, one line per item.
+
+### Multiline Messages
+
+For messages with newlines, use `text=-` to read from stdin:
+```bash
+echo "Line 1
+Line 2
+*formatted*" | scripts/slack work chat.postMessage channel=C1234 text=-
+```
 
 ## Common Operations
 

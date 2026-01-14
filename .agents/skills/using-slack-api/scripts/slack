@@ -5,6 +5,7 @@
 # Examples:
 #   slack work conversations.list types=public_channel
 #   slack personal chat.postMessage channel=C1234 text="Hello"
+#   echo "multiline msg" | slack work chat.postMessage channel=C1234 text=-
 #   slack work users.list
 #
 # Config: ~/.slack.conf (or $SLACK_CONFIG)
@@ -94,15 +95,26 @@ RAW=""
 FULL=""
 PARAMS=()
 JSON_BODY=""
+STDIN_KEY=""
 
 for arg in "$@"; do
   case "$arg" in
     --raw) RAW="--raw" ;;
     --full) FULL="--full" ;;
     {*) JSON_BODY="$arg" ;;
+    *=-) 
+      # key=- means read value from stdin
+      STDIN_KEY="${arg%=-}"
+      ;;
     *=*) PARAMS+=("$arg") ;;
   esac
 done
+
+# Read stdin if requested
+if [[ -n "$STDIN_KEY" ]]; then
+  STDIN_VAL=$(cat)
+  PARAMS+=("$STDIN_KEY=$STDIN_VAL")
+fi
 
 # Determine if GET or POST
 POST_METHODS="chat.postMessage chat.update chat.delete chat.postEphemeral chat.scheduleMessage chat.deleteScheduledMessage \
@@ -132,24 +144,18 @@ if [[ "$IS_POST" == true ]]; then
   if [[ -n "$JSON_BODY" ]]; then
     BODY="$JSON_BODY"
   else
-    BODY="{"
-    first=true
+    # Use jq to build JSON properly (handles escaping)
+    BODY="{}"
     for param in "${PARAMS[@]}"; do
       key="${param%%=*}"
       val="${param#*=}"
-      if [[ "$first" == true ]]; then
-        first=false
-      else
-        BODY+=","
-      fi
-      # Try to detect if value is JSON
+      # Check if value is already JSON (object, array, number, boolean)
       if [[ "$val" =~ ^\{.*\}$ ]] || [[ "$val" =~ ^\[.*\]$ ]] || [[ "$val" =~ ^[0-9]+$ ]] || [[ "$val" == "true" ]] || [[ "$val" == "false" ]]; then
-        BODY+="\"$key\":$val"
+        BODY=$(echo "$BODY" | jq --arg k "$key" --argjson v "$val" '. + {($k): $v}')
       else
-        BODY+="\"$key\":\"$val\""
+        BODY=$(echo "$BODY" | jq --arg k "$key" --arg v "$val" '. + {($k): $v}')
       fi
     done
-    BODY+="}"
   fi
   
   RESPONSE=$(curl -s -X POST "$URL" \
